@@ -29,13 +29,13 @@ public class Server {
 
     private double switchProcessValue = 0.1;
 
-    private ServerState serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
-
+    private ServerState serverState;
 
     public Server(List<Element> elements, Queue<Request> firstProcessQueue, Queue<Request> secondProcessQueue) {
         this.elements = elements;
         this.firstProcessQueue = firstProcessQueue;
         this.secondProcessQueue = secondProcessQueue;
+        serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
         for (Element element : elements) {
             if (element instanceof Process process) {
                 if (process.getAllowedProcessRequestType().equals(AllowedProcessRequestType.FIRST_TYPE)) {
@@ -70,8 +70,17 @@ public class Server {
                 }
             } else if (currentElement instanceof Process process) {
                 optimize(process);
-                process.releaseRequest();
-                processedRequests += 1;
+                if (process.isBusy()) {
+                    process.releaseRequest();
+                    processedRequests += 1;
+                    if (process.getAllowedProcessRequestType() == AllowedProcessRequestType.SECOND_TYPE) {
+                        if (nextSecondRequestsProcessingNum > 0) {
+                            nextSecondRequestsProcessingNum--;
+                        }
+                    }
+                } else {
+                    process.startProcessingFromQueue();
+                }
             }
         }
     }
@@ -95,10 +104,14 @@ public class Server {
                     process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
                 }
                 serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
+                double maxSecondProcessFinishTime = findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType.SECOND_TYPE);
+                for (Process process : firstProcesses) {
+                    process.setNextEventTime(maxSecondProcessFinishTime);
+                }
             }
         } else {
-            if (serverState != ServerState.PROCESS_SECOND_REQUEST_TYPE) {
-                if (request.getRequestType().equals(RequestType.C.name())) {
+            if (request.getRequestType().equals(RequestType.C.name())) {
+                if (serverState != ServerState.PROCESS_SECOND_REQUEST_TYPE) {
                     System.out.println("------------------------------\n" +
                             "Switch Model from process A and B request type to C request type\n" +
                             "------------------------------\n");
@@ -108,11 +121,12 @@ public class Server {
                     for (Process process : secondProcesses) {
                         process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
                     }
+                    serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
+                    double maxFirstProcessFinishTime = findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType.FIRST_TYPE);
+                    for (Process process : secondProcesses) {
+                        process.setNextEventTime(maxFirstProcessFinishTime);
+                    }
                 }
-                serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
-            }
-            if (nextSecondRequestsProcessingNum > 0) {
-                nextSecondRequestsProcessingNum--;
             }
         }
     }
@@ -148,6 +162,10 @@ public class Server {
                                     "Optimize switch model from process A and B request type to C request type\n" +
                                     "------------------------------\n");
                             serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
+                            double maxFirstProcessFinishTime = findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType.FIRST_TYPE);
+                            for (Process process : secondProcesses) {
+                                process.setNextEventTime(maxFirstProcessFinishTime);
+                            }
                         }
                     }
                 }
@@ -164,6 +182,13 @@ public class Server {
     }
 
     private void assignRequestToFirstProcessType(Request request) {
+        for (Process process : secondProcesses) {
+            if (process.isBusy()) {
+                firstProcessQueue.add(request);
+                System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to queue");
+                return;
+            }
+        }
         boolean assignedRequest = false;
         for (Process process : firstProcesses) {
             if (!process.isBusy()) {
@@ -174,10 +199,18 @@ public class Server {
         }
         if (!assignedRequest) {
             firstProcessQueue.add(request);
+            System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to queue");
         }
     }
 
     private void assignRequestToSecondProcessType(Request request) {
+        for (Process process : firstProcesses) {
+            if (process.isBusy()) {
+                secondProcessQueue.add(request);
+                System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to queue");
+                return;
+            }
+        }
         boolean assignedRequest = false;
         for (Process process : secondProcesses) {
             if (!process.isBusy()) {
@@ -188,7 +221,30 @@ public class Server {
         }
         if (!assignedRequest) {
             secondProcessQueue.add(request);
+            System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to queue");
         }
+    }
+
+    private double findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType allowedProcessRequestType) {
+        double maxProcessTime = 0;
+        if (AllowedProcessRequestType.FIRST_TYPE == allowedProcessRequestType) {
+            double currentProcessTime;
+            for (Process process : firstProcesses) {
+                currentProcessTime = process.getNextEventTime();
+                if (currentProcessTime > maxProcessTime) {
+                    maxProcessTime = currentProcessTime;
+                }
+            }
+        } else {
+            double currentProcessTime;
+            for (Process process : secondProcesses) {
+                currentProcessTime = process.getNextEventTime();
+                if (currentProcessTime > maxProcessTime) {
+                    maxProcessTime = currentProcessTime;
+                }
+            }
+        }
+        return maxProcessTime;
     }
 
     public void printServerStatistic() {

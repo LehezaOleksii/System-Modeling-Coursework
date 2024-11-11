@@ -17,7 +17,7 @@ public class Request {
         this.createdTime = createdTime;
         this.processingTime = processingTime;
         this.requestType = requestType;
-        System.out.println("Generated Request ID: " + id);
+        System.out.println("Generated Request ID " + id);
     }
 
     public double getProcessingTime() {

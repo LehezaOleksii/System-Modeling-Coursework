@@ -1,6 +1,7 @@
 package oleksii.leheza.kpi.ms;
 
 import oleksii.leheza.kpi.ms.enums.AllowedProcessRequestType;
+import oleksii.leheza.kpi.ms.enums.ProcessState;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -13,9 +14,9 @@ public class Main {
 
         Queue<Request> firstProcessQueue = new LinkedList<>();
         Queue<Request> secondProcessQueue = new LinkedList<>();
-        Process p1 = new Process("Process 1.1", firstProcessQueue, AllowedProcessRequestType.FIRST_TYPE);
-        Process p2 = new Process("Process 1.2", firstProcessQueue, AllowedProcessRequestType.FIRST_TYPE);
-        Process p3 = new Process("Process 2.1", secondProcessQueue, AllowedProcessRequestType.SECOND_TYPE);
+        Process p1 = new Process("Process 1.1", firstProcessQueue, AllowedProcessRequestType.FIRST_TYPE, ProcessState.ENABLE_TO_GET_REQUEST);
+        Process p2 = new Process("Process 1.2", firstProcessQueue, AllowedProcessRequestType.FIRST_TYPE, ProcessState.ENABLE_TO_GET_REQUEST);
+        Process p3 = new Process("Process 2.1", secondProcessQueue, AllowedProcessRequestType.SECOND_TYPE, ProcessState.DISABLE_TO_GET_REQUEST);
 
         RequestGenerator generator = new RequestGenerator("Generator");
 

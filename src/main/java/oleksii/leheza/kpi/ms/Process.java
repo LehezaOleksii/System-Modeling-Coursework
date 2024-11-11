@@ -15,11 +15,11 @@ public class Process extends Element {
     private Request currentRequest;
     private boolean isBusy;
 
-    public Process(String name, Queue<Request> requestQueue, AllowedProcessRequestType allowedProcessRequestType) {
+    public Process(String name, Queue<Request> requestQueue, AllowedProcessRequestType allowedProcessRequestType, ProcessState processState) {
         super(name);
         this.requestQueue = requestQueue;
         this.allowedProcessRequestType = allowedProcessRequestType;
-        processState = ProcessState.ENABLE_TO_GET_REQUEST;
+        this.processState = processState;
     }
 
     public void processRequest(Request request) {
@@ -34,22 +34,35 @@ public class Process extends Element {
                 currentRequest = request;
                 currentRequest.setStartProcessingTime(currentTime);
                 nextEventTime = currentTime + request.getProcessingTime();
-                System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to " + name);
+                System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " start processing in the " + name);
             }
         } else {
             System.out.println("Request ID " + request.getId() + " is not allowed to process");
         }
+        System.out.println("QUEUE " + name + " " + requestQueue.size());
     }
 
     public void releaseRequest() {
         processedRequests++;
         isBusy = false;
-        currentRequest = null;
+        System.out.println("Request ID " + currentRequest.getId() + " finished processing in the " + name);
         if (!requestQueue.isEmpty() && processState == ProcessState.ENABLE_TO_GET_REQUEST) {
             Request nextRequest = requestQueue.poll();
             processRequest(nextRequest);
         } else {
             nextEventTime = Double.MAX_VALUE;
+            currentRequest = null;
+            System.out.println(name + " is free");
+        }
+    }
+
+    public void startProcessingFromQueue() {
+        if (!requestQueue.isEmpty() && processState == ProcessState.ENABLE_TO_GET_REQUEST) {
+            Request nextRequest = requestQueue.poll();
+            processRequest(nextRequest);
+        } else {
+            nextEventTime = Double.MAX_VALUE;
+            currentRequest = null;
             System.out.println(name + " is free");
         }
     }
