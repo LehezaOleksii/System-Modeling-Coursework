@@ -24,7 +24,7 @@ public class RequestGenerator extends Element {
             double processingRequestTime = generateExponentialTime(requestType.getProcessingTimeMean(), requestType.getProcessingTimeVariance());
             RequestTypeNameToNextGenerateTime.put(requestType.name(), currentTime + processingRequestTime);
             double minNextGenerationTime = findMinNextGenerateTime();
-            nextEventTime = currentTime + minNextGenerationTime;
+            nextEventTime = minNextGenerationTime;
             return new Request(currentTime, processingRequestTime, requestType.name());
         } else {
             System.out.println("FAILED TO GENERATE REQUEST");//TODO delete
@@ -43,12 +43,12 @@ public class RequestGenerator extends Element {
     }
 
     private double findMinNextGenerateTime() {
-        double minValue = Double.MIN_VALUE;
-        double currentMinTime;
+        double minValue = Double.MAX_VALUE;
+        double currentMinGenerationTime;
         for (String key : RequestTypeNameToNextGenerateTime.keySet()) {
-            currentMinTime = RequestTypeNameToNextGenerateTime.get(key);
-            if (minValue > currentMinTime) {
-                minValue = currentMinTime;
+            currentMinGenerationTime = RequestTypeNameToNextGenerateTime.get(key);
+            if (minValue > currentMinGenerationTime) {
+                minValue = currentMinGenerationTime;
             }
         }
         return minValue;
