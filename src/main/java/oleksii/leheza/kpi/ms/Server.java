@@ -3,6 +3,7 @@ package oleksii.leheza.kpi.ms;
 import oleksii.leheza.kpi.ms.enums.AllowedProcessRequestType;
 import oleksii.leheza.kpi.ms.enums.ProcessState;
 import oleksii.leheza.kpi.ms.enums.RequestType;
+import oleksii.leheza.kpi.ms.enums.ServerState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,8 @@ public class Server {
     private int nextSecondRequestsProcessingNum;
 
     private double switchProcessValue = 0.1;
+
+    private ServerState serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
 
 
     public Server(List<Element> elements, Queue<Request> firstProcessQueue, Queue<Request> secondProcessQueue) {
@@ -81,26 +84,32 @@ public class Server {
             }
         }
         if (firstBusyProcesses + firstProcessQueue.size() >= 2 && nextSecondRequestsProcessingNum == 0) {
-            System.out.println("------------------------------\n" +
-                    "Switch Model from process A and B request type to C request type\n" +
-                    "------------------------------\n");
-            for (Process process : secondProcesses) {
-                process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
-            }
-            for (Process process : firstProcesses) {
-                process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
-            }
-        } else {
-            if (request.getRequestType().equals(RequestType.C.name())) {
+            if (serverState != ServerState.PROCESS_FIRST_REQUEST_TYPE) {
                 System.out.println("------------------------------\n" +
                         "Switch Model from process C request type to A and B request type\n" +
                         "------------------------------\n");
-                for (Process process : firstProcesses) {
+                for (Process process : secondProcesses) {
                     process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
                 }
-                for (Process process : secondProcesses) {
+                for (Process process : firstProcesses) {
                     process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
                 }
+                serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
+            }
+        } else {
+            if (serverState != ServerState.PROCESS_SECOND_REQUEST_TYPE) {
+                if (request.getRequestType().equals(RequestType.C.name())) {
+                    System.out.println("------------------------------\n" +
+                            "Switch Model from process A and B request type to C request type\n" +
+                            "------------------------------\n");
+                    for (Process process : firstProcesses) {
+                        process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
+                    }
+                    for (Process process : secondProcesses) {
+                        process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
+                    }
+                }
+                serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
             }
             if (nextSecondRequestsProcessingNum > 0) {
                 nextSecondRequestsProcessingNum--;
@@ -127,16 +136,19 @@ public class Server {
                     }
                     Request anotherProcessRequest = anotherBusyProcess.getCurrentRequest();
                     if (1 - ((currentTime - anotherProcessRequest.getStartProcessingTime()) / anotherProcessRequest.getProcessingTime()) <= switchProcessValue) {
-                        for (Process process : firstProcesses) {
-                            process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
+                        if (serverState != ServerState.PROCESS_SECOND_REQUEST_TYPE) {
+                            for (Process process : firstProcesses) {
+                                process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
+                            }
+                            for (Process process : secondProcesses) {
+                                process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
+                            }
+                            nextSecondRequestsProcessingNum = (int) (secondProcessQueue.size() * PERCENT_SERVER_OFFLOADING / 100);
+                            System.out.println("------------------------------\n" +
+                                    "Optimize switch model from process A and B request type to C request type\n" +
+                                    "------------------------------\n");
+                            serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
                         }
-                        for (Process process : secondProcesses) {
-                            process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
-                        }
-                        nextSecondRequestsProcessingNum = (int) (secondProcessQueue.size() * PERCENT_SERVER_OFFLOADING / 100);
-                        System.out.println("------------------------------\n" +
-                                "Optimize switch model from process A and B request type to C request type\n" +
-                                "------------------------------\n");
                     }
                 }
             }

@@ -27,7 +27,7 @@ public class RequestGenerator extends Element {
             nextEventTime = minNextGenerationTime;
             return new Request(currentTime, processingRequestTime, requestType.name());
         } else {
-            System.out.println("FAILED TO GENERATE REQUEST");//TODO delete
+            System.out.println("FAILED TO GENERATE REQUEST");
             return null;
         }
     }
