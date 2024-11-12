@@ -9,11 +9,13 @@ import java.util.Queue;
 public class Process extends Element {
 
     private Queue<Request> requestQueue;
-    private int processedRequests;/////////////////
+    private int processedRequests;
     private AllowedProcessRequestType allowedProcessRequestType;
     private ProcessState processState;
     private Request currentRequest;
     private boolean isBusy;
+
+    private double processingTime;
 
     public Process(String name, Queue<Request> requestQueue, AllowedProcessRequestType allowedProcessRequestType, ProcessState processState) {
         super(name);
@@ -24,7 +26,7 @@ public class Process extends Element {
 
     public void processRequest(Request request) {
         if (allowedProcessRequestType.getAllowedRequestTypes().contains(RequestType.valueOf(request.getRequestType()))) {
-            if (isBusy || processState == ProcessState.DISABLE_TO_GET_REQUEST) { //TODO add waiting
+            if (isBusy || processState == ProcessState.DISABLE_TO_GET_REQUEST) {
                 if (requestQueue != null) {
                     requestQueue.add(request);
                     System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to queue");
@@ -44,6 +46,7 @@ public class Process extends Element {
 
     public void releaseRequest() {
         processedRequests++;
+        processingTime += currentRequest.getProcessingTime();
         isBusy = false;
         System.out.println("Request ID " + currentRequest.getId() + " finished processing in the " + name);
         if (!requestQueue.isEmpty() && processState == ProcessState.ENABLE_TO_GET_REQUEST) {
@@ -72,7 +75,14 @@ public class Process extends Element {
     }
 
     public void printStatistic() {
-        System.out.println("----------" + name + " statistics" + "----------");
+        System.out.println("-------" + name + " statistics" + "-------");
+        System.out.println("Processed requests: " + processedRequests);
+        System.out.println("Queue size: " + requestQueue.size());
+        System.out.printf("Loading device : %.1f%%%n", getLoadingDevice());
+    }
+
+    public double getLoadingDevice() {
+        return (processingTime / currentTime) * 100;
     }
 
     public AllowedProcessRequestType getAllowedProcessRequestType() {
@@ -93,5 +103,13 @@ public class Process extends Element {
 
     public boolean isBusy() {
         return isBusy;
+    }
+
+    public int getProcessedRequests() {
+        return processedRequests;
+    }
+
+    public double getProcessingTime() {
+        return processingTime;
     }
 }

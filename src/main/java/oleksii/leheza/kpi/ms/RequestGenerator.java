@@ -55,7 +55,7 @@ public class RequestGenerator extends Element {
     }
 
     private double generateExponentialTime(int mean, int variance) {
-        double gaussian = ThreadLocalRandom.current().nextGaussian();
-        return Math.round(mean + gaussian * variance);//TODO question
+        double gaussian = ThreadLocalRandom.current().nextGaussian() % 1;
+        return mean + gaussian * variance; //TODO
     }
 }

@@ -36,5 +36,32 @@ public class Main {
                 process.printStatistic();
             }
         }
+
+        System.out.println("-------System statistic------");
+        double firstSystemLoadingDevicesSum = 0;
+        for (Element e : elements) {
+            if (e instanceof Process process && process.getAllowedProcessRequestType() == AllowedProcessRequestType.FIRST_TYPE) {
+                firstSystemLoadingDevicesSum += process.getLoadingDevice();
+            }
+        }
+        double secondSystemLoadingDevicesSum = 0;
+        for (Element e : elements) {
+            if (e instanceof Process process && process.getAllowedProcessRequestType() == AllowedProcessRequestType.SECOND_TYPE) {
+                secondSystemLoadingDevicesSum += process.getLoadingDevice();
+            }
+        }
+        List<Process> firstProcesses = new ArrayList<>();
+        List<Process> secondProcesses = new ArrayList<>();
+        for (Element element : elements) {
+            if (element instanceof Process process) {
+                if (process.getAllowedProcessRequestType().equals(AllowedProcessRequestType.FIRST_TYPE)) {
+                    firstProcesses.add(process);
+                } else {
+                    secondProcesses.add(process);
+                }
+            }
+        }
+        System.out.printf("Total system loading: %.3f%%%n", ((firstSystemLoadingDevicesSum / firstProcesses.size()) + (secondSystemLoadingDevicesSum / secondProcesses.size())) / 2);
+        System.out.printf("Efficient system loading: %.3f%%%n", (firstSystemLoadingDevicesSum / firstProcesses.size()) + (secondSystemLoadingDevicesSum / secondProcesses.size()));
     }
 }

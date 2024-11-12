@@ -11,13 +11,14 @@ import java.util.Queue;
 
 public class Server {
 
-    private static final double PERCENT_SERVER_OFFLOADING = 70;
+    private static final double PERCENT_SERVER_OFFLOADING = 20;
 
     private double currentTime;
     private double nextTime;
     private List<Element> elements;
     private int requestNum;
     private int processedRequests;
+    private ServerState serverState;
 
     private Queue<Request> firstProcessQueue;
     private Queue<Request> secondProcessQueue;
@@ -26,10 +27,7 @@ public class Server {
     private List<Process> secondProcesses = new ArrayList<>();
 
     private int nextSecondRequestsProcessingNum;
-
-    private double switchProcessValue = 0.1;
-
-    private ServerState serverState;
+    private double switchProcessValue = 0.01;
 
     public Server(List<Element> elements, Queue<Request> firstProcessQueue, Queue<Request> secondProcessQueue) {
         this.elements = elements;
@@ -248,6 +246,7 @@ public class Server {
     }
 
     public void printServerStatistic() {
-        System.out.println("----Statistic----\n" + "All requests :" + requestNum + "\n" + "Requests received for processing\n: " + processedRequests + "\n");
+        System.out.println("----------Server statistic----------");
+        System.out.println("All generated requests :" + requestNum + "\n" + "Processed requests: " + processedRequests);
     }
 }

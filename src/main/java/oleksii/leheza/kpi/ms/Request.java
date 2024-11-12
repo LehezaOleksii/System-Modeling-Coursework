@@ -9,7 +9,6 @@ public class Request {
     private String requestType;
     private double createdTime;
     private double startProcessingTime;
-    private double waitingTime;
 
     public Request(double createdTime, double processingTime, String requestType) {
         id = generalId;
@@ -34,10 +33,6 @@ public class Request {
 
     public double getCreatedTime() {
         return createdTime;
-    }
-
-    public double getWaitingTime() {
-        return waitingTime;
     }
 
     public double getStartProcessingTime() {
