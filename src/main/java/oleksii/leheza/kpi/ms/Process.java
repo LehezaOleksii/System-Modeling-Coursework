@@ -3,6 +3,7 @@ package oleksii.leheza.kpi.ms;
 import oleksii.leheza.kpi.ms.enums.AllowedProcessRequestType;
 import oleksii.leheza.kpi.ms.enums.ProcessState;
 import oleksii.leheza.kpi.ms.enums.RequestType;
+import oleksii.leheza.kpi.ms.enums.ServerLoadingState;
 
 import java.util.Queue;
 
@@ -15,13 +16,19 @@ public class Process extends Element {
     private Request currentRequest;
     private boolean isBusy;
 
+    private ServerLoadingState serverLoadingState;
+    private int processedRequestsStatistic;
+
+    private double startMainLoadingSystemTime;
+
     private double processingTime;
 
-    public Process(String name, Queue<Request> requestQueue, AllowedProcessRequestType allowedProcessRequestType, ProcessState processState) {
+    public Process(String name, Queue<Request> requestQueue, AllowedProcessRequestType allowedProcessRequestType, ProcessState processState, ServerLoadingState serverLoadingState) {
         super(name);
         this.requestQueue = requestQueue;
         this.allowedProcessRequestType = allowedProcessRequestType;
         this.processState = processState;
+        this.serverLoadingState = serverLoadingState;
     }
 
     public void processRequest(Request request) {
@@ -46,7 +53,10 @@ public class Process extends Element {
 
     public void releaseRequest() {
         processedRequests++;
-        processingTime += currentRequest.getProcessingTime();
+        if (serverLoadingState == ServerLoadingState.MAIN_WORKING_LOADING) {
+            processedRequestsStatistic++;
+            processingTime += currentRequest.getProcessingTime();
+        }
         isBusy = false;
         System.out.println("Request ID " + currentRequest.getId() + " finished processing in the " + name);
         if (!requestQueue.isEmpty() && processState == ProcessState.ENABLE_TO_GET_REQUEST) {
@@ -77,12 +87,13 @@ public class Process extends Element {
     public void printStatistic() {
         System.out.println("-------" + name + " statistics" + "-------");
         System.out.println("Processed requests: " + processedRequests);
+        System.out.println("Processed requests in main system state: " + processedRequestsStatistic);
         System.out.println("Queue size: " + requestQueue.size());
-        System.out.printf("Loading device : %.1f%%%n", getLoadingDevice());
+        System.out.printf("Loading device : %.3f%%%n", getLoadingDevice());
     }
 
     public double getLoadingDevice() {
-        return (processingTime / currentTime) * 100;
+        return (processingTime / (currentTime - startMainLoadingSystemTime)) * 100;
     }
 
     public AllowedProcessRequestType getAllowedProcessRequestType() {
@@ -111,5 +122,13 @@ public class Process extends Element {
 
     public double getProcessingTime() {
         return processingTime;
+    }
+
+    public void setServerLoadingState(ServerLoadingState serverLoadingState) {
+        this.serverLoadingState = serverLoadingState;
+    }
+
+    public void setStartMainLoadingSystemTime(double startMainLoadingSystemTime) {
+        this.startMainLoadingSystemTime = startMainLoadingSystemTime;
     }
 }

@@ -1,9 +1,6 @@
 package oleksii.leheza.kpi.ms;
 
-import oleksii.leheza.kpi.ms.enums.AllowedProcessRequestType;
-import oleksii.leheza.kpi.ms.enums.ProcessState;
-import oleksii.leheza.kpi.ms.enums.RequestType;
-import oleksii.leheza.kpi.ms.enums.ServerState;
+import oleksii.leheza.kpi.ms.enums.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +17,9 @@ public class Server {
     private int processedRequests;
     private ServerState serverState;
 
+    private double workingTime;
+    private int processedRequestsWorking;
+
     private Queue<Request> firstProcessQueue;
     private Queue<Request> secondProcessQueue;
 
@@ -29,11 +29,14 @@ public class Server {
     private int nextSecondRequestsProcessingNum;
     private double switchProcessValue = 0.01;
 
-    public Server(List<Element> elements, Queue<Request> firstProcessQueue, Queue<Request> secondProcessQueue) {
+    private ServerLoadingState serverLoadingState;
+
+    public Server(List<Element> elements, Queue<Request> firstProcessQueue, Queue<Request> secondProcessQueue, ServerLoadingState serverLoadingState) {
         this.elements = elements;
         this.firstProcessQueue = firstProcessQueue;
         this.secondProcessQueue = secondProcessQueue;
         serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
+        this.serverLoadingState = serverLoadingState;
         for (Element element : elements) {
             if (element instanceof Process process) {
                 if (process.getAllowedProcessRequestType().equals(AllowedProcessRequestType.FIRST_TYPE)) {
@@ -68,13 +71,39 @@ public class Server {
                 }
             } else if (currentElement instanceof Process process) {
                 optimize(process);
+                if (serverLoadingState != ServerLoadingState.MAIN_WORKING_LOADING) {
+                    if (firstProcessQueue.size() >= 10 && secondProcessQueue.size() >= 10) {
+                        boolean statisticFlag = true;
+                        for (Element e : elements) {
+                            if (e instanceof Process p) {
+                                if (p.isBusy()) {
+                                    statisticFlag = false;
+                                }
+                            }
+                        }
+                        if (statisticFlag) {
+                            for (Element e : elements) {
+                                if (e instanceof Process p) {
+                                    p.setServerLoadingState(ServerLoadingState.MAIN_WORKING_LOADING);
+                                    p.setStartMainLoadingSystemTime(currentTime);
+                                }
+                            }
+                            serverLoadingState = ServerLoadingState.MAIN_WORKING_LOADING;
+                        }
+                    }
+                }
                 if (process.isBusy()) {
+                    Request releasedRequest = firstProcessQueue.peek();
                     process.releaseRequest();
                     processedRequests += 1;
                     if (process.getAllowedProcessRequestType() == AllowedProcessRequestType.SECOND_TYPE) {
                         if (nextSecondRequestsProcessingNum > 0) {
                             nextSecondRequestsProcessingNum--;
                         }
+                    }
+                    if (serverLoadingState == ServerLoadingState.MAIN_WORKING_LOADING) {
+                        workingTime += releasedRequest.getProcessingTime();
+                        processedRequestsWorking++;
                     }
                 } else {
                     process.startProcessingFromQueue();
@@ -243,6 +272,10 @@ public class Server {
             }
         }
         return maxProcessTime;
+    }
+
+    public double getWorkingTime() {
+        return workingTime;
     }
 
     public void printServerStatistic() {
