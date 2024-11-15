@@ -4,9 +4,11 @@ import oleksii.leheza.kpi.ms.enums.RequestType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 public class RequestGenerator extends Element {
+
+    private static Random random = new Random();
 
     private final Map<String, Double> RequestTypeNameToNextGenerateTime = new HashMap<>();
 
@@ -21,8 +23,8 @@ public class RequestGenerator extends Element {
     public Request generateRequest() {
         RequestType requestType = findCurrentEventType();
         if (requestType != null) {
-            double processingRequestTime = generateExponentialTime(requestType.getProcessingTimeMean(), requestType.getProcessingTimeVariance());
-            RequestTypeNameToNextGenerateTime.put(requestType.name(), currentTime + processingRequestTime);
+            double processingRequestTime = generateTime(requestType.getProcessingTimeMean(), requestType.getProcessingTimeVariance());
+            RequestTypeNameToNextGenerateTime.put(requestType.name(),  currentTime + generateTime(requestType.getArrivalTimeMean(), requestType.getArrivalTimeVariance()));
             double minNextGenerationTime = findMinNextGenerateTime();
             nextEventTime = minNextGenerationTime;
             return new Request(currentTime, processingRequestTime, requestType.name());
@@ -54,8 +56,7 @@ public class RequestGenerator extends Element {
         return minValue;
     }
 
-    private double generateExponentialTime(int mean, int variance) {
-        double gaussian = ThreadLocalRandom.current().nextGaussian() % 1;
-        return mean + gaussian * variance; //TODO
+    private double generateTime(double mean, double stdDev) {
+        return mean + stdDev * random.nextGaussian();
     }
 }

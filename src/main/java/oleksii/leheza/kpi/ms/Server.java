@@ -17,8 +17,16 @@ public class Server {
     private int processedRequests;
     private ServerState serverState;
 
+    private double lastFirstQueueTime;
+    private List<Integer> firstQueueSizeList = new ArrayList<>();
+    private List<Double> firstQueueSizePriodList = new ArrayList<>();
+    private double lastSecondQueueTime;
+    private List<Integer> secondQueueSizeList = new ArrayList<>();
+    private List<Double> secondQueueSizePriodList = new ArrayList<>();
+
     private double workingTime;
-    private int processedRequestsWorking;
+
+    private double startTimeTracking;
 
     private Queue<Request> firstProcessQueue;
     private Queue<Request> secondProcessQueue;
@@ -72,7 +80,7 @@ public class Server {
             } else if (currentElement instanceof Process process) {
                 optimize(process);
                 if (serverLoadingState != ServerLoadingState.MAIN_WORKING_LOADING) {
-                    if (firstProcessQueue.size() >= 10 && secondProcessQueue.size() >= 10) {
+                    if (firstProcessQueue.size() >= 2 && secondProcessQueue.size() >= 1) {
                         boolean statisticFlag = true;
                         for (Element e : elements) {
                             if (e instanceof Process p) {
@@ -89,11 +97,21 @@ public class Server {
                                 }
                             }
                             serverLoadingState = ServerLoadingState.MAIN_WORKING_LOADING;
+                            startTimeTracking = currentTime;
+                            lastFirstQueueTime = currentTime;
+                            lastSecondQueueTime = currentTime;
                         }
                     }
+                } else {
+                    firstQueueSizeList.add(firstProcessQueue.size() - 2);
+                    firstQueueSizePriodList.add(currentTime - lastFirstQueueTime);
+                    secondQueueSizeList.add(secondProcessQueue.size() - 1);
+                    secondQueueSizePriodList.add(currentTime - lastSecondQueueTime);
+                    lastFirstQueueTime = currentTime;
+                    lastSecondQueueTime = currentTime;
                 }
                 if (process.isBusy()) {
-                    Request releasedRequest = firstProcessQueue.peek();
+                    Request releasedRequest = process.getCurrentRequest();
                     process.releaseRequest();
                     processedRequests += 1;
                     if (process.getAllowedProcessRequestType() == AllowedProcessRequestType.SECOND_TYPE) {
@@ -103,7 +121,6 @@ public class Server {
                     }
                     if (serverLoadingState == ServerLoadingState.MAIN_WORKING_LOADING) {
                         workingTime += releasedRequest.getProcessingTime();
-                        processedRequestsWorking++;
                     }
                 } else {
                     process.startProcessingFromQueue();
@@ -121,9 +138,7 @@ public class Server {
         }
         if (firstBusyProcesses + firstProcessQueue.size() >= 2 && nextSecondRequestsProcessingNum == 0) {
             if (serverState != ServerState.PROCESS_FIRST_REQUEST_TYPE) {
-                System.out.println("------------------------------\n" +
-                        "Switch Model from process C request type to A and B request type\n" +
-                        "------------------------------\n");
+                System.out.println("------------------------------\n" + "Switch Model from process C request type to A and B request type\n" + "------------------------------\n");
                 for (Process process : secondProcesses) {
                     process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
                 }
@@ -139,9 +154,7 @@ public class Server {
         } else {
             if (request.getRequestType().equals(RequestType.C.name())) {
                 if (serverState != ServerState.PROCESS_SECOND_REQUEST_TYPE) {
-                    System.out.println("------------------------------\n" +
-                            "Switch Model from process A and B request type to C request type\n" +
-                            "------------------------------\n");
+                    System.out.println("------------------------------\n" + "Switch Model from process A and B request type to C request type\n" + "------------------------------\n");
                     for (Process process : firstProcesses) {
                         process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
                     }
@@ -185,9 +198,7 @@ public class Server {
                                 process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
                             }
                             nextSecondRequestsProcessingNum = (int) (secondProcessQueue.size() * PERCENT_SERVER_OFFLOADING / 100);
-                            System.out.println("------------------------------\n" +
-                                    "Optimize switch model from process A and B request type to C request type\n" +
-                                    "------------------------------\n");
+                            System.out.println("------------------------------\n" + "Optimize switch model from process A and B request type to C request type\n" + "------------------------------\n");
                             serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
                             double maxFirstProcessFinishTime = findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType.FIRST_TYPE);
                             for (Process process : secondProcesses) {
@@ -271,6 +282,9 @@ public class Server {
                 }
             }
         }
+        if (maxProcessTime == Double.MAX_VALUE) {
+            maxProcessTime = currentTime;
+        }
         return maxProcessTime;
     }
 
@@ -279,7 +293,29 @@ public class Server {
     }
 
     public void printServerStatistic() {
+        double allFirstQueueSizeSum = 0;
+        for (Integer firstQueueLength : firstQueueSizeList) {
+            for (Double firstQueuePeriod : firstQueueSizePriodList) {
+                allFirstQueueSizeSum += firstQueueLength * firstQueuePeriod;
+            }
+        }
+        double allSecondQueueSizeSum = 0;
+        for (Integer secondQueueLength : secondQueueSizeList) {
+            for (Double secondQueuePeriod : secondQueueSizePriodList) {
+                allSecondQueueSizeSum += secondQueueLength * secondQueuePeriod;
+            }
+        }
+        double firstMean = (allFirstQueueSizeSum) / (firstQueueSizeList.size() * (currentTime - startTimeTracking));
+        double secondMean = (allSecondQueueSizeSum) / (firstQueueSizeList.size() * (currentTime - startTimeTracking));
         System.out.println("----------Server statistic----------");
-        System.out.println("All generated requests :" + requestNum + "\n" + "Processed requests: " + processedRequests);
+        System.out.println("All generated requests :" + requestNum + "\n" + "Processed requests: " + processedRequests + "\n" + "First queue mean size: " + firstMean + "\n" + "Second queue mean size: " + secondMean + "\n" + "First queue standard deviation: " + calculateStandardDeviation(firstQueueSizePriodList, firstMean) + "\n" + "Second queue standard deviation: " + calculateStandardDeviation(secondQueueSizePriodList, secondMean) + "\n");
+    }
+
+    public double calculateStandardDeviation(List<Double> intervals, double mean) {
+        double sum = 0.0;
+        for (double interval : intervals) {
+            sum += Math.pow(interval - mean, 2);
+        }
+        return Math.sqrt(sum / intervals.size());
     }
 }

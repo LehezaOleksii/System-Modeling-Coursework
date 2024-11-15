@@ -80,10 +80,6 @@ public class Process extends Element {
         }
     }
 
-    public Queue<Request> getRequestQueue() {
-        return requestQueue;
-    }
-
     public void printStatistic() {
         System.out.println("-------" + name + " statistics" + "-------");
         System.out.println("Processed requests: " + processedRequests);
@@ -106,6 +102,10 @@ public class Process extends Element {
 
     public void setProcessState(ProcessState processState) {
         this.processState = processState;
+    }
+
+    public Queue<Request> getRequestQueue() {
+        return requestQueue;
     }
 
     public ProcessState getProcessState() {

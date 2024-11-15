@@ -6,31 +6,31 @@ public enum RequestType {
     B(20, 10, 15, 3),
     C(30, 10, 15, 5);
 
-    private final int arrivalTimeMean;
-    private final int arrivalTimeVariance;
-    private final int processingTimeMean;
-    private final int processingTimeVariance;
+    private final double arrivalTimeMean;
+    private final double arrivalTimeVariance;
+    private final double processingTimeMean;
+    private final double processingTimeVariance;
 
-    RequestType(int arrivalTimeMean, int arrivalTimeVariance, int processingTimeMean, int processingTimeVariance) {
+    RequestType(double arrivalTimeMean, double arrivalTimeVariance, double processingTimeMean, double processingTimeVariance) {
         this.arrivalTimeMean = arrivalTimeMean;
         this.arrivalTimeVariance = arrivalTimeVariance;
         this.processingTimeMean = processingTimeMean;
         this.processingTimeVariance = processingTimeVariance;
     }
 
-    public int getArrivalTimeMean() {
+    public double getArrivalTimeMean() {
         return arrivalTimeMean;
     }
 
-    public int getArrivalTimeVariance() {
+    public double getArrivalTimeVariance() {
         return arrivalTimeVariance;
     }
 
-    public int getProcessingTimeMean() {
+    public double getProcessingTimeMean() {
         return processingTimeMean;
     }
 
-    public int getProcessingTimeVariance() {
+    public double getProcessingTimeVariance() {
         return processingTimeVariance;
     }
 }
