@@ -1,6 +1,6 @@
-package oleksii.leheza.kpi.ms;
+package oleksii.leheza.kpi.ms.v1;
 
-import oleksii.leheza.kpi.ms.enums.*;
+import oleksii.leheza.kpi.ms.v1.enums.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +9,7 @@ import java.util.Queue;
 public class Server {
 
     private static final double PERCENT_SERVER_OFFLOADING = 20;
+    private static final double SWITCH_PROCESS_VALUE = 0.01;
 
     private double currentTime;
     private double nextTime;
@@ -31,11 +32,10 @@ public class Server {
     private Queue<Request> firstProcessQueue;
     private Queue<Request> secondProcessQueue;
 
-    private List<Process> firstProcesses = new ArrayList<>();
-    private List<Process> secondProcesses = new ArrayList<>();
+    private List<oleksii.leheza.kpi.ms.v1.Process> firstProcesses = new ArrayList<>();
+    private List<oleksii.leheza.kpi.ms.v1.Process> secondProcesses = new ArrayList<>();
 
     private int nextSecondRequestsProcessingNum;
-    private double switchProcessValue = 0.01;
 
     private ServerLoadingState serverLoadingState;
 
@@ -46,7 +46,7 @@ public class Server {
         serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
         this.serverLoadingState = serverLoadingState;
         for (Element element : elements) {
-            if (element instanceof Process process) {
+            if (element instanceof oleksii.leheza.kpi.ms.v1.Process process) {
                 if (process.getAllowedProcessRequestType().equals(AllowedProcessRequestType.FIRST_TYPE)) {
                     firstProcesses.add(process);
                 } else {
@@ -77,30 +77,29 @@ public class Server {
                     chooseProcessType(request);
                     assignRequestToProcess(request);
                 }
-            } else if (currentElement instanceof Process process) {
+            } else if (currentElement instanceof oleksii.leheza.kpi.ms.v1.Process process) {
                 optimize(process);
                 if (serverLoadingState != ServerLoadingState.MAIN_WORKING_LOADING) {
                     if (firstProcessQueue.size() >= 2 && secondProcessQueue.size() >= 1) {
                         boolean statisticFlag = true;
                         for (Element e : elements) {
-                            if (e instanceof Process p) {
+                            if (e instanceof oleksii.leheza.kpi.ms.v1.Process p) {
                                 if (p.isBusy()) {
                                     statisticFlag = false;
                                 }
                             }
                         }
-                        if (statisticFlag) {
-                            for (Element e : elements) {
-                                if (e instanceof Process p) {
-                                    p.setServerLoadingState(ServerLoadingState.MAIN_WORKING_LOADING);
-                                    p.setStartMainLoadingSystemTime(currentTime);
-                                }
+                        for (Element e : elements) {
+                            if (e instanceof oleksii.leheza.kpi.ms.v1.Process p) {
+                                p.setServerLoadingState(ServerLoadingState.MAIN_WORKING_LOADING);
+                                p.setStartMainLoadingSystemTime(currentTime);
                             }
-                            serverLoadingState = ServerLoadingState.MAIN_WORKING_LOADING;
-                            startTimeTracking = currentTime;
-                            lastFirstQueueTime = currentTime;
-                            lastSecondQueueTime = currentTime;
                         }
+                        serverLoadingState = ServerLoadingState.MAIN_WORKING_LOADING;
+                        startTimeTracking = currentTime;
+                        lastFirstQueueTime = currentTime;
+                        lastSecondQueueTime = currentTime;
+
                     }
                 } else {
                     firstQueueSizeList.add(firstProcessQueue.size() - 2);
@@ -115,9 +114,7 @@ public class Server {
                     process.releaseRequest();
                     processedRequests += 1;
                     if (process.getAllowedProcessRequestType() == AllowedProcessRequestType.SECOND_TYPE) {
-                        if (nextSecondRequestsProcessingNum > 0) {
-                            nextSecondRequestsProcessingNum--;
-                        }
+                        nextSecondRequestsProcessingNum = secondProcessQueue.size();
                     }
                     if (serverLoadingState == ServerLoadingState.MAIN_WORKING_LOADING) {
                         workingTime += releasedRequest.getProcessingTime();
@@ -131,7 +128,7 @@ public class Server {
 
     private void chooseProcessType(Request request) {
         int firstBusyProcesses = 0;
-        for (Process process : firstProcesses) {
+        for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
             if (process.isBusy()) {
                 firstBusyProcesses++;
             }
@@ -139,15 +136,15 @@ public class Server {
         if (firstBusyProcesses + firstProcessQueue.size() >= 2 && nextSecondRequestsProcessingNum == 0) {
             if (serverState != ServerState.PROCESS_FIRST_REQUEST_TYPE) {
                 System.out.println("------------------------------\n" + "Switch Model from process C request type to A and B request type\n" + "------------------------------\n");
-                for (Process process : secondProcesses) {
+                for (oleksii.leheza.kpi.ms.v1.Process process : secondProcesses) {
                     process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
                 }
-                for (Process process : firstProcesses) {
+                for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
                     process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
                 }
                 serverState = ServerState.PROCESS_FIRST_REQUEST_TYPE;
                 double maxSecondProcessFinishTime = findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType.SECOND_TYPE);
-                for (Process process : firstProcesses) {
+                for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
                     process.setNextEventTime(maxSecondProcessFinishTime);
                 }
             }
@@ -155,15 +152,15 @@ public class Server {
             if (request.getRequestType().equals(RequestType.C.name())) {
                 if (serverState != ServerState.PROCESS_SECOND_REQUEST_TYPE) {
                     System.out.println("------------------------------\n" + "Switch Model from process A and B request type to C request type\n" + "------------------------------\n");
-                    for (Process process : firstProcesses) {
+                    for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
                         process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
                     }
-                    for (Process process : secondProcesses) {
+                    for (oleksii.leheza.kpi.ms.v1.Process process : secondProcesses) {
                         process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
                     }
                     serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
                     double maxFirstProcessFinishTime = findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType.FIRST_TYPE);
-                    for (Process process : secondProcesses) {
+                    for (oleksii.leheza.kpi.ms.v1.Process process : secondProcesses) {
                         process.setNextEventTime(maxFirstProcessFinishTime);
                     }
                 }
@@ -171,37 +168,37 @@ public class Server {
         }
     }
 
-    public void optimize(Process currentProcess) {
+    public void optimize(oleksii.leheza.kpi.ms.v1.Process currentProcess) {
         if (currentProcess.getAllowedProcessRequestType() == AllowedProcessRequestType.FIRST_TYPE) {
             int firstBusyProcesses = 0;
-            for (Process process : firstProcesses) {
+            for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
                 if (process.isBusy()) {
                     firstBusyProcesses++;
                 }
             }
             if (firstBusyProcesses == 2) {
                 if (!secondProcessQueue.isEmpty()) {
-                    Process anotherBusyProcess = null;
-                    for (Process process : firstProcesses) {
+                    oleksii.leheza.kpi.ms.v1.Process anotherBusyProcess = null;
+                    for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
                         if (process != currentProcess) {
                             anotherBusyProcess = process;
                             break;
                         }
                     }
                     Request anotherProcessRequest = anotherBusyProcess.getCurrentRequest();
-                    if (1 - ((currentTime - anotherProcessRequest.getStartProcessingTime()) / anotherProcessRequest.getProcessingTime()) <= switchProcessValue) {
+                    if (1 - ((currentTime - anotherProcessRequest.getStartProcessingTime()) / anotherProcessRequest.getProcessingTime()) <= SWITCH_PROCESS_VALUE) {
                         if (serverState != ServerState.PROCESS_SECOND_REQUEST_TYPE) {
-                            for (Process process : firstProcesses) {
+                            for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
                                 process.setProcessState(ProcessState.DISABLE_TO_GET_REQUEST);
                             }
-                            for (Process process : secondProcesses) {
+                            for (oleksii.leheza.kpi.ms.v1.Process process : secondProcesses) {
                                 process.setProcessState(ProcessState.ENABLE_TO_GET_REQUEST);
                             }
                             nextSecondRequestsProcessingNum = (int) (secondProcessQueue.size() * PERCENT_SERVER_OFFLOADING / 100);
                             System.out.println("------------------------------\n" + "Optimize switch model from process A and B request type to C request type\n" + "------------------------------\n");
                             serverState = ServerState.PROCESS_SECOND_REQUEST_TYPE;
                             double maxFirstProcessFinishTime = findMaxProcessTimeForAllowedProcessRequestType(AllowedProcessRequestType.FIRST_TYPE);
-                            for (Process process : secondProcesses) {
+                            for (oleksii.leheza.kpi.ms.v1.Process process : secondProcesses) {
                                 process.setNextEventTime(maxFirstProcessFinishTime);
                             }
                         }
@@ -220,7 +217,7 @@ public class Server {
     }
 
     private void assignRequestToFirstProcessType(Request request) {
-        for (Process process : secondProcesses) {
+        for (oleksii.leheza.kpi.ms.v1.Process process : secondProcesses) {
             if (process.isBusy()) {
                 firstProcessQueue.add(request);
                 System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to queue");
@@ -228,7 +225,7 @@ public class Server {
             }
         }
         boolean assignedRequest = false;
-        for (Process process : firstProcesses) {
+        for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
             if (!process.isBusy()) {
                 process.processRequest(request);
                 assignedRequest = true;
@@ -242,7 +239,7 @@ public class Server {
     }
 
     private void assignRequestToSecondProcessType(Request request) {
-        for (Process process : firstProcesses) {
+        for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
             if (process.isBusy()) {
                 secondProcessQueue.add(request);
                 System.out.println("Request ID " + request.getId() + " type " + request.getRequestType() + " assigned to queue");
@@ -250,7 +247,7 @@ public class Server {
             }
         }
         boolean assignedRequest = false;
-        for (Process process : secondProcesses) {
+        for (oleksii.leheza.kpi.ms.v1.Process process : secondProcesses) {
             if (!process.isBusy()) {
                 process.processRequest(request);
                 assignedRequest = true;
@@ -267,7 +264,7 @@ public class Server {
         double maxProcessTime = 0;
         if (AllowedProcessRequestType.FIRST_TYPE == allowedProcessRequestType) {
             double currentProcessTime;
-            for (Process process : firstProcesses) {
+            for (oleksii.leheza.kpi.ms.v1.Process process : firstProcesses) {
                 currentProcessTime = process.getNextEventTime();
                 if (currentProcessTime > maxProcessTime) {
                     maxProcessTime = currentProcessTime;

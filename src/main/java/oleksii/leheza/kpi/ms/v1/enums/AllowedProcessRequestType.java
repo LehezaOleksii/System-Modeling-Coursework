@@ -1,4 +1,4 @@
-package oleksii.leheza.kpi.ms.enums;
+package oleksii.leheza.kpi.ms.v1.enums;
 
 import java.util.HashSet;
 import java.util.List;

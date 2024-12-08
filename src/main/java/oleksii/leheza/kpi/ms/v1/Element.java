@@ -1,4 +1,4 @@
-package oleksii.leheza.kpi.ms;
+package oleksii.leheza.kpi.ms.v1;
 
 abstract class Element {
 

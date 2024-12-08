@@ -1,4 +1,4 @@
-package oleksii.leheza.kpi.ms.enums;
+package oleksii.leheza.kpi.ms.v2.enums;
 
 public enum ServerState {
 

@@ -1,9 +1,9 @@
-package oleksii.leheza.kpi.ms;
+package oleksii.leheza.kpi.ms.v1;
 
-import oleksii.leheza.kpi.ms.enums.AllowedProcessRequestType;
-import oleksii.leheza.kpi.ms.enums.ProcessState;
-import oleksii.leheza.kpi.ms.enums.RequestType;
-import oleksii.leheza.kpi.ms.enums.ServerLoadingState;
+import oleksii.leheza.kpi.ms.v1.enums.AllowedProcessRequestType;
+import oleksii.leheza.kpi.ms.v1.enums.ProcessState;
+import oleksii.leheza.kpi.ms.v1.enums.RequestType;
+import oleksii.leheza.kpi.ms.v1.enums.ServerLoadingState;
 
 import java.util.Queue;
 

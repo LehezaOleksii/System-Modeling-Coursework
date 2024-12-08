@@ -1,6 +1,6 @@
-package oleksii.leheza.kpi.ms;
+package oleksii.leheza.kpi.ms.v1;
 
-import oleksii.leheza.kpi.ms.enums.RequestType;
+import oleksii.leheza.kpi.ms.v1.enums.RequestType;
 
 import java.util.HashMap;
 import java.util.Map;

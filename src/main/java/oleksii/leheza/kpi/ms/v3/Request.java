@@ -1,4 +1,4 @@
-package oleksii.leheza.kpi.ms;
+package oleksii.leheza.kpi.ms.v3;
 
 public class Request {
 
