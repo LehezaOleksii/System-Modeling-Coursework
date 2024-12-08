@@ -57,6 +57,7 @@ public class RequestGenerator extends Element {
     }
 
     private double generateTime(double mean, double stdDev) {
-        return mean + stdDev * random.nextGaussian();
-    }
-}
+        double min = mean - stdDev;
+        double max = mean + stdDev;
+        return min + (max - min) * random.nextDouble();
+    }}

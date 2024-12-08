@@ -24,7 +24,7 @@ public class RequestGenerator extends Element {
         RequestType requestType = findCurrentEventType();
         if (requestType != null) {
             double processingRequestTime = generateTime(requestType.getProcessingTimeMean(), requestType.getProcessingTimeVariance());
-            RequestTypeNameToNextGenerateTime.put(requestType.name(),  currentTime + generateTime(requestType.getArrivalTimeMean(), requestType.getArrivalTimeVariance()));
+            RequestTypeNameToNextGenerateTime.put(requestType.name(), currentTime + generateTime(requestType.getArrivalTimeMean(), requestType.getArrivalTimeVariance()));
             double minNextGenerationTime = findMinNextGenerateTime();
             nextEventTime = minNextGenerationTime;
             return new Request(currentTime, processingRequestTime, requestType.name());
@@ -57,6 +57,8 @@ public class RequestGenerator extends Element {
     }
 
     private double generateTime(double mean, double stdDev) {
-        return mean + stdDev * random.nextGaussian();
+        double min = mean - stdDev;
+        double max = mean + stdDev;
+        return min + (max - min) * random.nextDouble();
     }
 }
